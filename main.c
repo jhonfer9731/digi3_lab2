@@ -253,6 +253,7 @@ void main(void){
     char firstEdge_flag = 0; // indicates the fist and second edge of the IC interrupt
     unsigned char movimiento = 0; // initial state of  conveyor belt
     unsigned int numeroBotellas = 0;
+	unsigned int numeroBotellasStd = 0;
     unsigned int cuentaStandardMas = 0;
     unsigned int cuentaStandardMenos = 0;
     unsigned int averageDefectuosas  = 0;
@@ -321,7 +322,7 @@ void main(void){
         //the cuentaEstandar button is pressed
         else if(flag_inputCapture == 4){
         	flag_inputCapture = 0;
-        	variableSeleccion = numeroBotellas;
+        	variableSeleccion = numeroBotellasStd;
         }
         //It happens when the CuentaEstandarMas button is pressed
         else if(flag_inputCapture == 5){
@@ -336,7 +337,7 @@ void main(void){
         //It happens when the Average_Defectuosas button is pressed
         else if(flag_inputCapture == 7){
 			flag_inputCapture = 0;
-			if(!numeroBotellas){
+			if(numeroBotellas){
 				variableSeleccion = botellasDefectuosas/numeroBotellas;
 			}else{
 				variableSeleccion = 0;
