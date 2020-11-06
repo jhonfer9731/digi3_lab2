@@ -12,7 +12,7 @@ unsigned int time_edge_1, time_edge_2; //variables for indicating the current ti
 unsigned long time_pulse_width; // time of bottle going across the sensor (this time measures indirectly the bottle diameter)
 
 
-unsigned int overflow_Count = 0; // indicates the number of timer overflows when the bottle goes across the sensor
+volatile unsigned int overflow_Count = 0; // indicates the number of timer overflows when the bottle goes across the sensor
 
 
 
@@ -253,6 +253,11 @@ void main(void){
     char firstEdge_flag = 0; // indicates the fist and second edge of the IC interrupt
     unsigned char movimiento = 0; // initial state of  conveyor belt
     unsigned int numeroBotellas = 0;
+    unsigned int cuentaStandardMas = 0;
+    unsigned int cuentaStandardMenos = 0;
+    unsigned int averageDefectuosas  = 0;
+    unsigned int botellasDefectuosas  = 0;
+    unsigned int variableSeleccion = 0;
     // system initialisation
     SOPT1_COPT  = 0; // disable the WatchDog
     Port_Init(); 
@@ -268,17 +273,17 @@ void main(void){
         
 
         //check if the interrupt is an Input Capture
-        if(flag_inputCapture == 1 || movimiento){
+        if(flag_inputCapture == 1){
             flag_inputCapture = 0;
             // verify if it is first or second edge
-            if(firstEdge_flag == 0){
+            if(firstEdge_flag == 0 && movimiento){
                 overflow_Count = 0; // reset the overflow counter
                 firstEdge_flag = 1;
                 time_edge_1 = TPM1C0V; // save the current count of the timer
                 PTAD_PTAD0 = 1; // the bottle just got captured by sensor
                 PTAD_PTAD1 = 0;
             }
-            else if(firstEdge_flag == 1){
+            else if(firstEdge_flag == 1 && movimiento){
 
                 firstEdge_flag = 0; 
                 time_edge_2 = TPM1C0V; // save the current count of the timer
@@ -302,8 +307,40 @@ void main(void){
 				PTAD_PTAD2 = 0; // PTAD[2] stops the conveyor belt
 				movimiento = 0;
         	}
+        	PTAD_PTAD3 = movimiento; //PTAD[3] indicates the movement status
         	
         	
+        }
+        // it indicates that Borrar_cuentas button was pressed
+        else if(flag_inputCapture == 3){
+        	flag_inputCapture = 0;
+        	if(!movimiento){
+        		numeroBotellas = 0; // the number of bottles is reset
+        	}
+        }
+        //the cuentaEstandar button is pressed
+        else if(flag_inputCapture == 4){
+        	flag_inputCapture = 0;
+        	variableSeleccion = numeroBotellas;
+        }
+        //It happens when the CuentaEstandarMas button is pressed
+        else if(flag_inputCapture == 5){
+			flag_inputCapture = 0;
+			variableSeleccion = cuentaStandardMas;
+        }
+        //It happens when the CuentaEstandarMenos button is pressed
+        else if(flag_inputCapture == 6){
+			flag_inputCapture = 0;
+			variableSeleccion = cuentaStandardMenos;
+        }
+        //It happens when the Average_Defectuosas button is pressed
+        else if(flag_inputCapture == 7){
+			flag_inputCapture = 0;
+			if(!numeroBotellas){
+				variableSeleccion = botellasDefectuosas/numeroBotellas;
+			}else{
+				variableSeleccion = 0;
+			}
         }
         
     }
