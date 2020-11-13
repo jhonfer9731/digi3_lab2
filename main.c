@@ -28,11 +28,23 @@ void Timer1_init(void){
    TPM1SC_TOIE = 1; //timer overflow input enable (enables the output interrupt request)
    TPM1SC_CPWMS = 0; // disabled the edge-aligned PWM
 
-   TPM1SC_PS = 5; // configure the pre-scale
+   TPM1SC_PS = 7; // configure the pre-scale
 
    TPM1MOD = MODULO_TOPE_TIMER; // configure the module register of timer (16bits)
 
 
+   TPM2SC_TOIE =1; //timer overflow input enable (enables the output interrupt request)
+   TPM2SC_PS = 7; // configure the pre-scale
+   TPM2SC_CPWMS = 0; 
+   TPM2MOD = 10000000;
+   
+   
+   
+   
+   
+   
+   
+   
     /* **** Configuration of timer channels **** 0 */
    
     TPM1C0SC_CH0IE = 1; // interrupt enable
@@ -122,6 +134,10 @@ void Timer1_init(void){
     //activate the bus clock A
     TPM1SC_CLKSA = 1;
     TPM1SC_CLKSB=0;// BUS RATE CLOCK
+    
+    
+    TPM2SC_CLKSA = 1;
+    TPM2SC_CLKSB = 0;
 }
 
 
@@ -132,6 +148,10 @@ void Port_Init( void ){
 	
     PTADD = 0xFF; // output port
     PTAD = 0x00; // clear port
+    //PTEDD = 0x00;
+    PTED = 0x00;
+    //PTFDD = 0x00;
+    PTFD = 0x00;
     
     /*  PTAD[2] boton start/stop */
 
@@ -261,11 +281,30 @@ void main(void){
     unsigned int variableSeleccion = 0;
     // system initialisation
     SOPT1_COPT  = 0; // disable the WatchDog
-    Port_Init(); 
     Timer1_init();
+    Port_Init(); 
 
     //Enable interrupts
     EnableInterrupts;
+    
+    
+    /**** Assigned input ports **/
+    /*
+     * 
+     * 
+    TImer 1: 
+    
+    PTED[2] = ch0 -> t1,t2 rising/fallin edge
+    PTED[3] = ch1 -> on/off btn
+    PTFD[0] = ch2 -> erase counts
+    PTFD[1] = ch3 -> # standard bottles
+    PTFD[2] = ch4 -> # stardard +
+    PTFD[3] = ch5 -> # stardard -
+    
+    Timer 2:
+    PTFD[4] = ch0 -> #deficient bottles average
+    
+     */
 
 
     for(;;){
@@ -291,6 +330,7 @@ void main(void){
                 PTAD_PTAD0 = 0;
                 PTAD_PTAD1 = 1; // the bottle just left the sensor
                 time_pulse_width = (long) (time_edge_2 + overflow_Count*MODULO_TOPE_TIMER - time_edge_1); // calculates the time the bottle takes to go across the sensor
+                
                 overflow_Count = 0; // reset the overflow counter
                 numeroBotellas++; // increases the bottle counter
 
@@ -338,7 +378,7 @@ void main(void){
         else if(flag_inputCapture == 7){
 			flag_inputCapture = 0;
 			if(numeroBotellas){
-				variableSeleccion = botellasDefectuosas/numeroBotellas;
+				variableSeleccion = (botellasDefectuosas*100)/numeroBotellas;
 			}else{
 				variableSeleccion = 0;
 			}
