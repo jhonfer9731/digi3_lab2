@@ -35,8 +35,8 @@ void Timer1_init(void){
 
    TPM2SC_TOIE =1; //timer overflow input enable (enables the output interrupt request)
    TPM2SC_PS = 7; // configure the pre-scale
-   TPM2SC_CPWMS = 0; 
-   TPM2MOD = 10000000;
+   TPM2SC_CPWMS = 0;
+   TPM2MOD = 65000;
    
    
    
@@ -272,13 +272,18 @@ void main(void){
 
     char firstEdge_flag = 0; // indicates the fist and second edge of the IC interrupt
     unsigned char movimiento = 0; // initial state of  conveyor belt
+    
     unsigned int numeroBotellas = 0;
+    unsigned char defecto = 0; // flag for wrong bottles
 	unsigned int numeroBotellasStd = 0;
     unsigned int cuentaStandardMas = 0;
     unsigned int cuentaStandardMenos = 0;
     unsigned int averageDefectuosas  = 0;
     unsigned int botellasDefectuosas  = 0;
     unsigned int variableSeleccion = 0;
+    unsigned int min = 5000; //Min & Max to define the size range for Standard bottles.
+	unsigned int max = 6000;
+	unsigned int tmax = 0;
     // system initialisation
     SOPT1_COPT  = 0; // disable the WatchDog
     Timer1_init();
@@ -330,7 +335,25 @@ void main(void){
                 PTAD_PTAD0 = 0;
                 PTAD_PTAD1 = 1; // the bottle just left the sensor
                 time_pulse_width = (long) (time_edge_2 + overflow_Count*MODULO_TOPE_TIMER - time_edge_1); // calculates the time the bottle takes to go across the sensor
-                
+                if (time_pulse_width>=min && time_pulse_width<=max){
+					numeroBotellasStd++;
+					defecto=0;
+				}
+				else if(max<time_pulse_width){
+					cuentaStandardMas++;
+					botellasDefectuosas++;
+					defecto=1;
+				}
+				else if(time_pulse_width<min){
+					cuentaStandardMenos++;
+					botellasDefectuosas++;
+					defecto=1;
+				}
+				else{
+					botellasDefectuosas++;
+					defecto=1;
+				}
+				PTAD_PTAD4 = defecto;
                 overflow_Count = 0; // reset the overflow counter
                 numeroBotellas++; // increases the bottle counter
 
