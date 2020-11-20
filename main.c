@@ -2,7 +2,6 @@
 #include "derivative.h"
 
 
-
 #define MODULO_TOPE_TIMER 30000 // it defines the ceiling of the timer, then the count is reset
 
 volatile unsigned char flag_inputCapture = 0; //variable for indicating the main program that the Input Capture interrupt rutine was attended
@@ -28,7 +27,7 @@ void Timer1_init(void){
 	TPM1SC_TOIE = 1; //timer overflow input enable (enables the output interrupt request)
 	TPM1SC_CPWMS = 0; // disabled the edge-aligned PWM
 	
-	TPM1SC_PS = 5; // configure the pre-scale
+	TPM1SC_PS = 6; // configure the pre-scale
 	
 	TPM1MOD = MODULO_TOPE_TIMER; // configure the module register of timer (16bits)
 	
@@ -69,8 +68,8 @@ void Timer1_init(void){
 	// select (Input Capture) Timer Mode
 	TPM1C1SC_MS1A = 0;
 	TPM1C1SC_MS1B = 0;
-	// capture on rising and falling edge
-	TPM1C1SC_ELS1A = 1;
+	// capture on falling edge
+	TPM1C1SC_ELS1A = 0;
 	TPM1C1SC_ELS1B = 1;
 	
 	
@@ -272,6 +271,27 @@ interrupt 15 void TPM1_Overflow_ISR(void){
 
 }
 
+
+void asignarMensaje(char *mensaje,char *nuevoMensaje){
+	
+	unsigned char contador = 0;
+	while(nuevoMensaje[contador] != '\0'){
+		mensaje[contador] = nuevoMensaje[contador];
+		contador++;
+	}
+	
+}
+
+void asignarNumero(unsigned int A, char* mensaje){
+	
+	mensaje[2] = (A/10)+48;
+	mensaje[3] = (A%10)+48;
+		
+}
+
+
+
+
 void main(void){
 
     char firstEdge_flag = 0; // indicates the fist and second edge of the IC interrupt
@@ -284,10 +304,11 @@ void main(void){
     unsigned int averageDefectuosas  = 0;
     unsigned int botellasDefectuosas  = 0;
     unsigned int variableSeleccion = 0;  // it has the number of one bottle category
-    unsigned int min = 5000; // Min & Max to define the size range for Standard bottles.
-	unsigned int max = 7000; 
+    const unsigned int min = 30000; // Min & Max to define the size range for Standard bottles.
+	const unsigned int max = 50000; 
 	unsigned int tmax = 0; //Counter for the 10 seconds
-	char mensajeApagado[] = "Tiempo de espera maximo alcanzado, el sistema se apagara ....";
+	
+	char mensaje[65]= "  00   Numero de Botellas Std"; 
 	
 	
     // system initialisation
@@ -297,7 +318,7 @@ void main(void){
 
     //Enable interrupts
     EnableInterrupts;
-    
+   
     
     /**** Assigned input ports **/
     /*
@@ -344,6 +365,9 @@ void main(void){
                 if (time_pulse_width>=min && time_pulse_width<=max){
 					numeroBotellasStd++;
 					defecto=0;
+					asignarMensaje(mensaje,"      Numero de botellas estandar");
+					asignarNumero(numeroBotellasStd,mensaje);
+					
 				}
 				else if(max<time_pulse_width){
 					cuentaStandardMas++;
@@ -397,16 +421,22 @@ void main(void){
         else if(flag_inputCapture == 4){
         	flag_inputCapture = 0;
         	variableSeleccion = numeroBotellasStd;
+        	asignarMensaje(mensaje,"      Numero de botellas estandar");
+			asignarNumero(numeroBotellasStd,mensaje);
         }
         //It happens when the CuentaEstandarMas button is pressed
         else if(flag_inputCapture == 5){
 			flag_inputCapture = 0;
 			variableSeleccion = cuentaStandardMas;
+			asignarMensaje(mensaje,"      Numero de botellas estandar mas");
+			asignarNumero(variableSeleccion,mensaje);
         }
         //It happens when the CuentaEstandarMenos button is pressed
         else if(flag_inputCapture == 6){
 			flag_inputCapture = 0;
 			variableSeleccion = cuentaStandardMenos;
+			asignarMensaje(mensaje,"      Numero de botellas estandar menos");
+			asignarNumero(variableSeleccion,mensaje);
         }
         //It happens when the Average_Defectuosas button is pressed
         else if(flag_inputCapture == 7){
@@ -416,6 +446,8 @@ void main(void){
 			}else{
 				variableSeleccion = 0;
 			}
+			asignarMensaje(mensaje,"    %  Porcentaje botellas defectuosas");
+			asignarNumero(variableSeleccion,mensaje);
         }
         else if(overflow_Count > 2){ // Enter when 
         	overflow_Count = 0;
@@ -426,6 +458,7 @@ void main(void){
 			PTAD_PTAD1 = 0;
 			defecto = 0;
 			PTAD_PTAD4 = 0;
+			asignarMensaje(mensaje,"Tiempo de espera maximo alcanzado, el sistema se apagara ....");
         }
     }
 
